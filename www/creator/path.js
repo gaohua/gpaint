@@ -20,13 +20,14 @@ class QPathCreator{
         this.points = []
         this.started = false
         invalidate(null)
+        qview.fireControllerReset()
     }
     buildShape(){
         let points = [{x:this.fromPos.x,y:this.fromPos.y}]
         for(let i in this.points){
             points.push(this.points[i])
         }
-        return new QPath(points,this.close,qview.lineStyle)
+        return new QPath(points,this.close,qview.style.clone())
     }
     onmousedown(event){
         this.toPos = qview.getMousePos(event)
@@ -50,20 +51,32 @@ class QPathCreator{
             this.reset()
         }
     }
+    onkeydown(event){
+        switch(event.keyCode){
+            case 13: // keyEnter
+                this.points.push(this.toPos)
+                this.ondblclick(event)
+                break
+            case 27: // kyeEsc
+                this.reset()
+        }
+    }
     
     onpaint(ctx){
         if(this.started){
-            ctx.lineWidth = qview.lineStyle.width
-            ctx.strokeStyle = qview.lineStyle.color
+            let style = qview.style.clone()
+            ctx.lineWidth = style.lineWidth
+            ctx.strokeStyle = style.lineColor
             ctx.beginPath()
             ctx.moveTo(this.fromPos.x,this.fromPos.y)
             for(let i in this.points){
                 ctx.lineTo(this.points[i].x,this.points[i].y)
             }
+            ctx.lineTo(this.toPos.x,this.toPos.y)
             if(this.close){
                 ctx.closePath()
             }
-            ctx.lineTo(this.toPos.x,this.toPos.y)
+            
             ctx.stroke()
         }
     }

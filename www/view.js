@@ -1,42 +1,49 @@
 class QPaintView{
     constructor(){
-        this.properties = {
-            lineWidth:1,
-            lineColor:"black"
-        }
+        this.style = new QShapeStyle(1,"black","white")
         this.controllers = {}
         this._currentKey = ""
         this._current = null
+        this._selection = null
         this.onmousedown = null
-        this.onmousemove = null
         this.onmouseup = null
-        this.ondblclick = null
+        this.onmousemove = null
+        this.ondbclick = null
         this.onkeydown = null
+        this.onSelectionChanged = null
+        this.onControllerReset = null
         let drawing = document.getElementById("drawing")
         let view = this
         drawing.onmousedown = function(event){
-            if(view.onmousedown != null){
+            event.preventDefault()
+            if(view.onmousedown !== null){
                 view.onmousedown(event)
             }
         }
         drawing.onmousemove = function(event){
-            if(view.onmousemove != null){
+            if(view.onmousemove !== null){
                 view.onmousemove(event)
             }
         }
         drawing.onmouseup = function(event){
-            if(view.onmouseup != null){
+            if(view.onmouseup !== null){
                 view.onmouseup(event)
             }
         }
         drawing.ondblclick = function(event){
-            if(view.ondblclick != null){
+            event.preventDefault()
+            if(view.ondblclick !== null){
                 view.ondblclick(event)
             }
         }
-        drawing.onkeydown = function(event){
-            if(view.onkeydown != null){
-                view.onkeydown(event)
+        document.onkeydown = function(event){
+            switch(event.keyCode){
+                case 9: case 13: case 27:{
+                    event.preventDefault()
+                }
+                if(view.onkeydown !== null){
+                    view.onkeydown(event)
+                }
             }
         }
         this.drawing = drawing
@@ -46,9 +53,17 @@ class QPaintView{
     get currentKey(){
         return this._currentKey
     }
-    get lineStyle(){
-        let props = this.properties
-        return new QLineStyle(props.lineWidth,props.lineColor)
+    get selection(){
+        return this._selection
+    }
+    set selection(shape){
+        let old = this._selection
+        if(old != shape){
+            this._selection = shape
+            if(this.onSelectionChanged != null){
+                this.onSelectionChanged(old)
+            }
+        }
     }
 
     onpaint(ctx){
@@ -57,18 +72,21 @@ class QPaintView{
             this._current.onpaint(ctx)
         }
     }
+    
     getMousePos(event){
         return {
             x:event.offsetX,
             y:event.offsetY
         }
     }
+
     invalidateRect(reserved){
         let ctx = this.drawing.getContext("2d")
         let bound = this.drawing.getBoundingClientRect()
         ctx.clearRect(0,0,bound.width,bound.height)
         this.onpaint(ctx)
     }
+
     registerController(name,controller){
         if(name in this.controllers){
             alert("Controller exists: " + name)
@@ -76,6 +94,7 @@ class QPaintView{
             this.controllers[name] = controller
         }
     }
+    
     invokeController(name){
         this.stopController()
         if(name in this.controllers){
@@ -83,12 +102,19 @@ class QPaintView{
             this._setCurrent(name,controller())
         }
     }
+
     stopController(){
-        if(this._current != null){
+        if(this._current !== null){
             this._current.stop()
             this._setCurrent("",null)
         }
     }
+    fireControllerReset(){
+        if(this.onControllerReset != null){
+            this.onControllerReset()
+        }
+    }
+
     _setCurrent(name,ctrl){
         this._current = ctrl
         this._currentKey = name
@@ -98,5 +124,5 @@ class QPaintView{
 var qview = new QPaintView()
 
 function invalidate(reserved){
-    qview.invalidateRect(reserved)
+    qview.invalidateRect(null)  
 }
