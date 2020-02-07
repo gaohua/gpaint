@@ -33,17 +33,21 @@ class QFreePathCreator{
     reset(){
         this.points = []
         this.started = false
+        invalidate(null)
+        qview.fireControllerReset()
     }
     buildShape(){
+        let style = qview.style.clone()
         let points = [{x:this.fromPos.x,y:this.fromPos.y}]
         for(let i in this.points){
             points.push(this.points[i])
         }
-        return new QPath(points,false,qview.lineStyle)
+        return new QPath(points,false,style)
     }
     onpaint(ctx){
-        ctx.lineWidth = qview.lineStyle.width
-        ctx.strokeStyle = qview.lineStyle.color
+        let style = qview.style.clone()
+        ctx.lineWidth = style.lineWidth
+        ctx.strokeStyle = style.lineColor
         ctx.beginPath()
         ctx.moveTo(this.fromPos.x, this.fromPos.y)
         for(let i in this.points){
